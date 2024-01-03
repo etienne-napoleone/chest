@@ -4,7 +4,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 
-use crate::compression::Compressor;
+use crate::compression::Compress;
 
 pub(crate) struct File {
     path: PathBuf,
@@ -19,7 +19,7 @@ impl File {
         Ok(fs::metadata(&self.path)?)
     }
 
-    pub(crate) fn compress(&self, compressor: &impl Compressor) -> Result<Vec<u8>> {
+    pub(crate) fn compress(&self, compressor: &impl Compress) -> Result<Vec<u8>> {
         Ok(compressor.compress(&self.path)?)
     }
 }
