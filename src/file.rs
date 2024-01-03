@@ -15,11 +15,11 @@ impl File {
         Self { path }
     }
 
-    pub(crate) fn metadata(&self) -> Result<Metadata> {
+    pub(crate) fn _metadata(&self) -> Result<Metadata> {
         Ok(fs::metadata(&self.path)?)
     }
 
     pub(crate) fn compress(&self, compressor: &impl Compress) -> Result<Vec<u8>> {
-        Ok(compressor.compress(&self.path)?)
+        compressor.compress(&self.path)
     }
 }
