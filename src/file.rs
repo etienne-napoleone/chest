@@ -1,5 +1,6 @@
 use std::fs;
 use std::fs::Metadata;
+use std::io::Read;
 use std::path::PathBuf;
 
 use anyhow::Result;
@@ -20,6 +21,9 @@ impl File {
     }
 
     pub(crate) fn compress(&self, compressor: &impl Compress) -> Result<Vec<u8>> {
-        compressor.compress(&self.path)
+        let mut file = std::fs::File::open(&self.path)?;
+        let mut buffer = Vec::new();
+        file.read_to_end(&mut buffer)?;
+        Ok(compressor.compress(buffer)?)
     }
 }
