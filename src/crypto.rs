@@ -1,7 +1,11 @@
 use anyhow::Result;
 use ring::aead;
-use ring::rand::{SecureRandom, SystemRandom};
 use serde::{Deserialize, Serialize};
+
+use crate::random::generate_random_bytes;
+
+const SALT_LENGTH: usize = 8;
+const NONCE_LENGTH: usize = 12;
 
 pub(crate) trait Encrypt {
     fn encrypt(&self, payload: Vec<u8>, key: &[u8; 32]) -> Result<EncryptedPayload>;
@@ -11,8 +15,8 @@ pub(crate) trait Encrypt {
 #[derive(Serialize, Deserialize)]
 pub(crate) struct EncryptedPayload {
     pub(crate) cipher: Vec<u8>,
-    pub(crate) salt: [u8; 8],
-    pub(crate) nonce: [u8; 12],
+    pub(crate) salt: Vec<u8>,
+    pub(crate) nonce: Vec<u8>,
 }
 
 #[derive(Default)]
@@ -21,16 +25,13 @@ pub(crate) struct Aes256Encryptor;
 impl Encrypt for Aes256Encryptor {
     fn encrypt(&self, payload: Vec<u8>, key: &[u8; 32]) -> Result<EncryptedPayload> {
         let mut buffer = payload.clone();
-        let rng = SystemRandom::new();
         // salt
-        let mut salt = [0u8; 8];
-        rng.fill(&mut salt)?;
+        let salt = generate_random_bytes(SALT_LENGTH)?;
         let aead_alg = &aead::AES_256_GCM;
         let sealing_key = aead::LessSafeKey::new(aead::UnboundKey::new(aead_alg, key).unwrap());
         // nonce
-        let mut raw_nonce = [0; 12];
-        rng.fill(&mut raw_nonce)?;
-        let nonce = aead::Nonce::assume_unique_for_key(raw_nonce);
+        let raw_nonce = generate_random_bytes(NONCE_LENGTH)?;
+        let nonce = aead::Nonce::assume_unique_for_key(raw_nonce.clone().try_into().unwrap());
         // encrypt
         sealing_key.seal_in_place_append_tag(nonce, aead::Aad::empty(), &mut buffer)?;
         Ok(EncryptedPayload {
@@ -45,7 +46,7 @@ impl Encrypt for Aes256Encryptor {
         let aead_alg = &aead::AES_256_GCM;
         let sealing_key = aead::LessSafeKey::new(aead::UnboundKey::new(aead_alg, key).unwrap());
         // nonce
-        let nonce = aead::Nonce::assume_unique_for_key(payload.nonce);
+        let nonce = aead::Nonce::assume_unique_for_key(payload.nonce.clone().try_into().unwrap());
         // decrypt
         let plaintext = sealing_key.open_in_place(nonce, aead::Aad::empty(), &mut buffer)?;
         Ok(plaintext.into())

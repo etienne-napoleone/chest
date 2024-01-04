@@ -6,8 +6,9 @@ use anyhow::Result;
 // use ring::rand::{SecureRandom, SystemRandom};
 use serde::{Deserialize, Serialize};
 
-// use crate::compression::Compress;
-// use crate::crypto::Encrypt;
+use crate::compression::Compress;
+use crate::crypto::Encrypt;
+use crate::key::Derive;
 
 #[derive(Default, Serialize, Deserialize)]
 pub(crate) struct Chest {

@@ -6,6 +6,7 @@ mod cli;
 mod compression;
 mod crypto;
 mod key;
+mod random;
 
 fn main() {
     let cmd = cli::Cli::parse();
