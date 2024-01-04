@@ -3,6 +3,7 @@ use std::num::NonZeroU32;
 use anyhow::Result;
 use ring::rand::{SecureRandom, SystemRandom};
 use ring::{aead, pbkdf2};
+use serde::{Deserialize, Serialize};
 
 static PBKDF2_ALG: pbkdf2::Algorithm = pbkdf2::PBKDF2_HMAC_SHA256;
 
@@ -11,6 +12,7 @@ pub(crate) trait Encrypt {
     fn decrypt(&self, payload: &EncryptedPayload, password: &str) -> Result<Vec<u8>>;
 }
 
+#[derive(Serialize, Deserialize)]
 pub(crate) struct EncryptedPayload {
     pub(crate) cipher: Vec<u8>,
     pub(crate) salt: [u8; 8],
