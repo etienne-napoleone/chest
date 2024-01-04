@@ -12,7 +12,7 @@ pub(crate) struct Cli {
 pub(crate) enum Commands {
     /// Create a new chest
     #[command(arg_required_else_help = true)]
-    New { name: String },
+    New { name: String, password: String },
     /// Peek into a chest and list its content
     #[command(arg_required_else_help = true)]
     Peek { path: String },

@@ -2,14 +2,18 @@ use anyhow::Result;
 use ring::aead;
 use serde::{Deserialize, Serialize};
 
-use crate::random::generate_random_bytes;
+use crate::{
+    chest::{EncryptedBlob, EncryptionAlgorithm},
+    random::generate_random_bytes,
+};
 
 const SALT_LENGTH: usize = 8;
 const NONCE_LENGTH: usize = 12;
 
-pub(crate) trait Encrypt {
-    fn encrypt(&self, payload: Vec<u8>, key: &[u8; 32]) -> Result<EncryptedPayload>;
-    fn decrypt(&self, payload: &EncryptedPayload, key: &[u8; 32]) -> Result<Vec<u8>>;
+pub(crate) fn get_encryptor(algorithm: &EncryptionAlgorithm) -> impl Encrypt {
+    match algorithm {
+        EncryptionAlgorithm::Aes256 => Aes256Encryptor,
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -19,11 +23,16 @@ pub(crate) struct EncryptedPayload {
     pub(crate) nonce: Vec<u8>,
 }
 
+pub(crate) trait Encrypt {
+    fn encrypt(&self, payload: Vec<u8>, key: &[u8; 32]) -> Result<EncryptedBlob>;
+    fn decrypt(&self, payload: &EncryptedBlob, key: &[u8; 32]) -> Result<Vec<u8>>;
+}
+
 #[derive(Default)]
 pub(crate) struct Aes256Encryptor;
 
 impl Encrypt for Aes256Encryptor {
-    fn encrypt(&self, payload: Vec<u8>, key: &[u8; 32]) -> Result<EncryptedPayload> {
+    fn encrypt(&self, payload: Vec<u8>, key: &[u8; 32]) -> Result<EncryptedBlob> {
         let mut buffer = payload.clone();
         // salt
         let salt = generate_random_bytes(SALT_LENGTH)?;
@@ -34,14 +43,14 @@ impl Encrypt for Aes256Encryptor {
         let nonce = aead::Nonce::assume_unique_for_key(raw_nonce.clone().try_into().unwrap());
         // encrypt
         sealing_key.seal_in_place_append_tag(nonce, aead::Aad::empty(), &mut buffer)?;
-        Ok(EncryptedPayload {
+        Ok(EncryptedBlob {
             cipher: buffer,
             salt,
             nonce: raw_nonce,
         })
     }
 
-    fn decrypt(&self, payload: &EncryptedPayload, key: &[u8; 32]) -> Result<Vec<u8>> {
+    fn decrypt(&self, payload: &EncryptedBlob, key: &[u8; 32]) -> Result<Vec<u8>> {
         let mut buffer = payload.cipher.clone();
         let aead_alg = &aead::AES_256_GCM;
         let sealing_key = aead::LessSafeKey::new(aead::UnboundKey::new(aead_alg, key).unwrap());

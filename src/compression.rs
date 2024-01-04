@@ -5,6 +5,14 @@ use flate2::read::DeflateDecoder;
 use flate2::write::DeflateEncoder;
 use flate2::Compression;
 
+use crate::chest::CompressionAlgorithm;
+
+pub(crate) fn get_compressor(algorithm: &CompressionAlgorithm) -> impl Compress {
+    match algorithm {
+        CompressionAlgorithm::Deflate => DeflateCompressor,
+    }
+}
+
 pub(crate) trait Compress {
     fn compress(&self, payload: &[u8]) -> Result<Vec<u8>>;
     fn decompress(&self, payload: &[u8]) -> Result<Vec<u8>>;
