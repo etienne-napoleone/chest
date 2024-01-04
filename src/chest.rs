@@ -79,6 +79,13 @@ impl Chest {
             files: Vec::default(),
         })
     }
+
+    pub(crate) fn from_file<P: AsRef<Path>>(path: P) -> Result<Chest<LockedHeader>> {
+        let mut file = fs::File::open(path)?;
+        let mut payload = Vec::new();
+        file.read_to_end(&mut payload)?;
+        Ok(bincode::deserialize(&payload)?)
+    }
 }
 
 impl Chest<UnlockedHeader> {
@@ -149,9 +156,8 @@ impl Chest<LockedHeader> {
         let deriver = get_deriver(&self.public.key_derivation_algorithm);
         let encryptor = get_encryptor(&self.public.encryption_algorithm);
         let key = deriver.derive(password, &self.public.key_derivation_salt)?;
-        let header = bincode::deserialize::<UnlockedHeader>(
-            &encryptor.decrypt(&self.header.0, &key.try_into().unwrap())?,
-        )?;
+        let header =
+            bincode::deserialize(&encryptor.decrypt(&self.header.0, &key.try_into().unwrap())?)?;
         Ok(Chest {
             header,
             public: self.public.clone(),

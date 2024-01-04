@@ -13,10 +13,20 @@ pub(crate) enum Commands {
     /// Create a new chest
     #[command(arg_required_else_help = true)]
     New { name: String, password: String },
+    /// Create a new chest
+    #[command(arg_required_else_help = true)]
+    AddFile {
+        chest_path: String,
+        file_path: String,
+        password: String,
+    },
     /// Peek into a chest and list its content
     #[command(arg_required_else_help = true)]
-    Peek { path: String },
+    Peek {
+        chest_path: String,
+        password: String,
+    },
     /// Open a chest and extract its encrypted content
     #[command(arg_required_else_help = true)]
-    Open { path: String },
+    Open { chest_path: String },
 }
