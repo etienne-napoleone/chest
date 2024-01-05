@@ -6,7 +6,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::compression::{get_compressor, Compress};
 use crate::crypto::{get_encryptor, Encrypt};
-use crate::error::ChestResult;
+use crate::error::{ChestError, ChestResult};
 use crate::key::{get_deriver, Derive};
 
 #[derive(Serialize, Deserialize)]
@@ -132,16 +132,16 @@ impl UnlockedChest {
         let files = self
             .files
             .into_iter()
-            .map(|f| LockedFile {
-                cipher: f.cipher,
-                metadata: encryptor
-                    .encrypt(
-                        bincode::serialize(&f.metadata).unwrap(),
+            .map(|f| {
+                Ok(LockedFile {
+                    cipher: f.cipher,
+                    metadata: encryptor.encrypt(
+                        bincode::serialize(&f.metadata)?,
                         &key.clone().try_into().unwrap(),
-                    )
-                    .unwrap(),
+                    )?,
+                })
             })
-            .collect();
+            .collect::<Result<Vec<_>, ChestError>>()?;
         Ok(LockedChest { public, files })
     }
 
@@ -153,18 +153,17 @@ impl UnlockedChest {
             .compression_algorithm
             .as_ref()
             .map(get_compressor);
-        self.files.iter().for_each(|f| {
-            let binary = encryptor
-                .decrypt(&f.cipher, &self.key.clone().try_into().unwrap())
-                .unwrap();
+        self.files.iter().try_for_each::<_, ChestResult<()>>(|f| {
+            let binary = encryptor.decrypt(&f.cipher, &self.key.clone().try_into().unwrap())?;
             let binary = match compressor {
-                Some(compressor) => compressor.decompress(&binary).unwrap(),
+                Some(compressor) => compressor.decompress(&binary)?,
                 None => binary,
             };
             let file_path = path.as_ref().join(&f.metadata.filename);
-            let mut file = fs::File::create(file_path).unwrap();
-            file.write_all(&binary).unwrap();
-        });
+            let mut file = fs::File::create(file_path)?;
+            file.write_all(&binary)?;
+            Ok(())
+        })?;
         Ok(())
     }
 }
@@ -192,16 +191,15 @@ impl LockedChest {
         let files = self
             .files
             .into_iter()
-            .map(|f| UnlockedFile {
-                cipher: f.cipher,
-                metadata: bincode::deserialize(
-                    &encryptor
-                        .decrypt(&f.metadata, &key.clone().try_into().unwrap())
-                        .unwrap(),
-                )
-                .unwrap(),
+            .map(|f| {
+                Ok(UnlockedFile {
+                    cipher: f.cipher,
+                    metadata: bincode::deserialize(
+                        &encryptor.decrypt(&f.metadata, &key.clone().try_into().unwrap())?,
+                    )?,
+                })
             })
-            .collect();
+            .collect::<Result<Vec<_>, ChestError>>()?;
         Ok(UnlockedChest { key, public, files })
     }
 }
