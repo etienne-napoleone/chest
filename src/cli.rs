@@ -4,7 +4,7 @@ use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
 #[command(name = "chest")]
-#[command(about = "A file encryption CLI tool")]
+#[command(about = "Simple encrypted file storage cli tool")]
 pub(crate) struct Cli {
     #[command(subcommand)]
     pub(crate) command: Commands,
