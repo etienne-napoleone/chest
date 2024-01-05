@@ -74,7 +74,7 @@ pub(crate) struct LockedFile {
 }
 
 impl UnlockedChest {
-    pub(crate) fn new(password: &str, compress: bool) -> ChestResult<Self> {
+    pub(crate) fn new(password: &str, compress: bool) -> Self {
         let public = Public {
             compression_algorithm: compress.then_some(CompressionAlgorithm::default()),
             ..Public::default()
@@ -82,7 +82,7 @@ impl UnlockedChest {
         let deriver = get_deriver(&public.key_derivation_algorithm);
         let key = deriver.derive(password, &public.key_derivation_salt);
         let files = Vec::default();
-        Ok(Self { key, public, files })
+        Self { key, public, files }
     }
 
     pub(crate) fn add_file_from_cipher(

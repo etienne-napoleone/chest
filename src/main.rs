@@ -30,7 +30,7 @@ fn run() -> ChestResult<()> {
             no_compression,
         } => {
             let password = password.unwrap_or_else(|| prompt("Password"));
-            let mut unlocked = UnlockedChest::new(&password, !no_compression)?;
+            let mut unlocked = UnlockedChest::new(&password, !no_compression);
             success("Created new chest");
             add.iter().try_for_each::<_, ChestResult<()>>(|path| {
                 info(&format!("Adding file {}", INFO.apply_to(format_path(path))));
