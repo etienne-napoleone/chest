@@ -12,31 +12,31 @@ use crate::key::{get_deriver, Derive};
 #[derive(Serialize, Deserialize)]
 pub(crate) struct UnlockedChest {
     key: Vec<u8>,
-    public: Public,
+    pub(crate) public: Public,
     pub(crate) files: Vec<UnlockedFile>,
 }
 
 #[derive(Default, Clone, Serialize, Deserialize)]
 pub(crate) struct Public {
-    compression_algorithm: Option<CompressionAlgorithm>,
-    key_derivation_algorithm: KeyDerivationAlgorithm,
-    key_derivation_salt: Vec<u8>,
-    encryption_algorithm: EncryptionAlgorithm,
+    pub(crate) compression_algorithm: Option<CompressionAlgorithm>,
+    pub(crate) key_derivation_algorithm: KeyDerivationAlgorithm,
+    pub(crate) key_derivation_salt: Vec<u8>,
+    pub(crate) encryption_algorithm: EncryptionAlgorithm,
 }
 
-#[derive(Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub(crate) enum CompressionAlgorithm {
     #[default]
     Deflate,
 }
 
-#[derive(Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub(crate) enum EncryptionAlgorithm {
     #[default]
     Aes256,
 }
 
-#[derive(Default, Clone, Serialize, Deserialize)]
+#[derive(Debug, Default, Clone, Serialize, Deserialize)]
 pub(crate) enum KeyDerivationAlgorithm {
     #[default]
     Pbkdf2HmacSha256,

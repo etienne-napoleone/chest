@@ -52,10 +52,28 @@ fn run() -> ChestResult<()> {
             let password = password.unwrap_or_else(|| prompt("Password"));
             let locked = LockedChest::from_file(chest)?;
             let unlocked = locked.unlock(&password)?;
+            success("Unlocked chest");
+            info(&format!(
+                "Compression algorithm: {}",
+                INFO.apply_to(
+                    unlocked
+                        .public
+                        .compression_algorithm
+                        .map_or_else(|| "None".to_string(), |a| format!("{a:?}"))
+                )
+            ));
+            info(&format!(
+                "Key derivation algorithm: {:?}",
+                INFO.apply_to(unlocked.public.key_derivation_algorithm)
+            ));
+            info(&format!(
+                "Encryption algorithm: {:?}",
+                INFO.apply_to(unlocked.public.encryption_algorithm)
+            ));
             unlocked
                 .files
                 .iter()
-                .for_each(|f| println!("{}", f.metadata.filename));
+                .for_each(|f| info(&format!("File: {}", INFO.apply_to(&f.metadata.filename))));
         }
 
         cli::Commands::Open {
@@ -79,13 +97,13 @@ fn run() -> ChestResult<()> {
                     .into()
             });
             info(&format!(
-                "Extracting chest to folder {}",
+                "Decrypting & extracting chest to folder {}",
                 INFO.apply_to(format_path(&out))
             ));
             unlocked.decrypt_files_to_folder(&out)?;
             remove_last_lines(1);
             success(&format!(
-                "Extracted chest to folder {}",
+                "Decrypted & extracted chest to folder {}",
                 INFO.apply_to(format_path(&out))
             ));
         }
