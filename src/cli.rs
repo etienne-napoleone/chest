@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use clap::{Parser, Subcommand};
 
 #[derive(Debug, Parser)]
@@ -12,21 +14,36 @@ pub(crate) struct Cli {
 pub(crate) enum Commands {
     /// Create a new chest
     #[command(arg_required_else_help = true)]
-    New { name: String, password: String },
-    /// Create a new chest
-    #[command(arg_required_else_help = true)]
-    AddFile {
-        chest_path: String,
-        file_path: String,
-        password: String,
+    New {
+        /// Chest name
+        name: String,
+        /// Files to encrypt in the chest
+        #[arg(short, long, required = true, num_args(0..), value_name = "PATH")]
+        add: Vec<PathBuf>,
+        /// Optional chest password, will be prompted if not provided
+        #[clap(short, long)]
+        password: Option<String>,
     },
+
     /// Peek into a chest and list its content
     #[command(arg_required_else_help = true)]
     Peek {
-        chest_path: String,
-        password: String,
+        /// Chest file path
+        #[clap(value_name = "PATH")]
+        chest: PathBuf,
+        /// Optional chest password, will be prompted if not provided
+        #[clap(short, long)]
+        password: Option<String>,
     },
+
     /// Open a chest and extract its encrypted content
     #[command(arg_required_else_help = true)]
-    Open { chest_path: String },
+    Open {
+        /// Chest file path
+        #[clap(value_name = "PATH")]
+        chest: PathBuf,
+        /// Optional chest password, will be prompted if not provided
+        #[clap(short, long)]
+        password: Option<String>,
+    },
 }
