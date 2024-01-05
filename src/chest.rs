@@ -76,11 +76,7 @@ pub(crate) struct LockedFile {
 impl UnlockedChest {
     pub(crate) fn new(password: &str, compress: bool) -> Result<Self> {
         let public = Public {
-            compression_algorithm: if compress {
-                Some(CompressionAlgorithm::default())
-            } else {
-                None
-            },
+            compression_algorithm: compress.then_some(CompressionAlgorithm::default()),
             ..Public::default()
         };
         let deriver = get_deriver(&public.key_derivation_algorithm);
