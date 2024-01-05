@@ -141,6 +141,29 @@ impl UnlockedChest {
             .collect();
         Ok(LockedChest { public, files })
     }
+
+    pub(crate) fn decrypt_files_to_folder<P: AsRef<Path>>(&self, path: P) -> Result<()> {
+        fs::create_dir_all(&path)?;
+        let encryptor = get_encryptor(&self.public.encryption_algorithm);
+        let compressor = &self
+            .public
+            .compression_algorithm
+            .as_ref()
+            .map(get_compressor);
+        self.files.iter().for_each(|f| {
+            let binary = encryptor
+                .decrypt(&f.cipher, &self.key.clone().try_into().unwrap())
+                .unwrap();
+            let binary = match compressor {
+                Some(compressor) => compressor.decompress(&binary).unwrap(),
+                None => binary,
+            };
+            let file_path = path.as_ref().join(&f.metadata.filename);
+            let mut file = fs::File::create(file_path).unwrap();
+            file.write_all(&binary).unwrap();
+        });
+        Ok(())
+    }
 }
 
 impl LockedChest {
@@ -179,65 +202,3 @@ impl LockedChest {
         Ok(UnlockedChest { key, public, files })
     }
 }
-
-// #[derive(Serialize, Deserialize)]
-// pub(crate) struct LockedHeader(EncryptedBlob);
-
-// pub(crate) trait Header {}
-// impl Header for LockedHeader {}
-// impl Header for UnlockedHeader {}
-
-// #[derive(Default, Serialize, Deserialize)]
-// pub(crate) struct Chest<H = UnlockedHeader>
-// where
-//     H: Header,
-// {
-//     pub(crate) public: Public,
-//     pub(crate) header: H,
-//     pub(crate) files: Vec<File>,
-// }
-
-// #[derive(Clone, Serialize, Deserialize)]
-// pub(crate) struct File {
-//     pub(crate) encrypted_blob: EncryptedBlob,
-//     pub(crate) metadata: Metadata,
-// }
-
-// #[derive(Clone, Serialize, Deserialize)]
-// pub(crate) struct EncryptedBlob {
-//     pub(crate) cipher: Vec<u8>,
-//     pub(crate) salt: Vec<u8>,
-//     pub(crate) nonce: Vec<u8>,
-// }
-
-// #[derive(Clone, Serialize, Deserialize)]
-// pub(crate) struct Metadata {
-//     pub(crate) filename: String,
-//     pub(crate) size_bytes: u64,
-// }
-
-// impl Chest<UnlockedHeader> {
-
-// }
-
-// impl Chest<LockedHeader> {
-//     pub(crate) fn write_to_file<P: AsRef<Path>>(&self, path: P) -> Result<()> {
-//         let serialized = bincode::serialize(self)?;
-//         let mut file = fs::File::create(path)?;
-//         file.write_all(&serialized)?;
-//         Ok(())
-//     }
-
-//     pub(crate) fn unlock(&self, password: &str) -> Result<Chest<UnlockedHeader>> {
-//         let deriver = get_deriver(&self.public.key_derivation_algorithm);
-//         let encryptor = get_encryptor(&self.public.encryption_algorithm);
-//         let key = deriver.derive(password, &self.public.key_derivation_salt)?;
-//         let header =
-//             bincode::deserialize(&encryptor.decrypt(&self.header.0, &key.try_into().unwrap())?)?;
-//         Ok(Chest {
-//             header,
-//             public: self.public.clone(),
-//             files: self.files.clone(),
-//         })
-//     }
-// }

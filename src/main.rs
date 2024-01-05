@@ -1,4 +1,7 @@
-use std::io::{self, Write};
+use std::{
+    ffi::OsStr,
+    io::{self, Write},
+};
 
 use anyhow::Result;
 use chest::{LockedChest, UnlockedChest};
@@ -35,7 +38,23 @@ fn main() -> Result<()> {
                 .iter()
                 .for_each(|f| println!("{}", f.metadata.filename));
         }
-        cli::Commands::Open { .. } => println!("open"),
+        cli::Commands::Open {
+            chest,
+            out,
+            password,
+        } => {
+            let password = prompt_password_if_empty(password);
+            let locked = LockedChest::from_file(&chest)?;
+            let unlocked = locked.unlock(&password)?;
+            let out = out.unwrap_or_else(|| {
+                chest
+                    .as_path()
+                    .file_stem()
+                    .unwrap_or(OsStr::new("out"))
+                    .into()
+            });
+            unlocked.decrypt_files_to_folder(out)?;
+        }
     };
     Ok(())
 }

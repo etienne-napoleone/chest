@@ -42,6 +42,9 @@ pub(crate) enum Commands {
         /// Chest file path
         #[clap(value_name = "PATH")]
         chest: PathBuf,
+        /// Chest file path
+        #[clap(short, long, value_name = "PATH")]
+        out: Option<PathBuf>,
         /// Optional chest password, will be prompted if not provided
         #[clap(short, long)]
         password: Option<String>,
