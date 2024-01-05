@@ -1,9 +1,9 @@
-use anyhow::Result;
 use ring::aead;
 use serde::{Deserialize, Serialize};
 
 use crate::{
     chest::{EncryptedBlob, EncryptionAlgorithm},
+    error::EncryptResult,
     random::generate_random_bytes,
 };
 
@@ -24,15 +24,15 @@ pub(crate) struct EncryptedPayload {
 }
 
 pub(crate) trait Encrypt {
-    fn encrypt(&self, payload: Vec<u8>, key: &[u8; 32]) -> Result<EncryptedBlob>;
-    fn decrypt(&self, payload: &EncryptedBlob, key: &[u8; 32]) -> Result<Vec<u8>>;
+    fn encrypt(&self, payload: Vec<u8>, key: &[u8; 32]) -> EncryptResult<EncryptedBlob>;
+    fn decrypt(&self, payload: &EncryptedBlob, key: &[u8; 32]) -> EncryptResult<Vec<u8>>;
 }
 
 #[derive(Default)]
 pub(crate) struct Aes256Encryptor;
 
 impl Encrypt for Aes256Encryptor {
-    fn encrypt(&self, payload: Vec<u8>, key: &[u8; 32]) -> Result<EncryptedBlob> {
+    fn encrypt(&self, payload: Vec<u8>, key: &[u8; 32]) -> EncryptResult<EncryptedBlob> {
         let mut buffer = payload.clone();
         // salt
         let salt = generate_random_bytes(SALT_LENGTH)?;
@@ -50,7 +50,7 @@ impl Encrypt for Aes256Encryptor {
         })
     }
 
-    fn decrypt(&self, payload: &EncryptedBlob, key: &[u8; 32]) -> Result<Vec<u8>> {
+    fn decrypt(&self, payload: &EncryptedBlob, key: &[u8; 32]) -> EncryptResult<Vec<u8>> {
         let mut buffer = payload.cipher.clone();
         let aead_alg = &aead::AES_256_GCM;
         let sealing_key = aead::LessSafeKey::new(aead::UnboundKey::new(aead_alg, key).unwrap());

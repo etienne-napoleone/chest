@@ -1,11 +1,11 @@
 use std::io::{Read, Write};
 
-use anyhow::Result;
 use flate2::read::DeflateDecoder;
 use flate2::write::DeflateEncoder;
 use flate2::Compression;
 
 use crate::chest::CompressionAlgorithm;
+use crate::error::CompressResult;
 
 pub(crate) fn get_compressor(algorithm: &CompressionAlgorithm) -> impl Compress {
     match algorithm {
@@ -14,21 +14,21 @@ pub(crate) fn get_compressor(algorithm: &CompressionAlgorithm) -> impl Compress 
 }
 
 pub(crate) trait Compress {
-    fn compress(&self, payload: &[u8]) -> Result<Vec<u8>>;
-    fn decompress(&self, payload: &[u8]) -> Result<Vec<u8>>;
+    fn compress(&self, payload: &[u8]) -> CompressResult<Vec<u8>>;
+    fn decompress(&self, payload: &[u8]) -> CompressResult<Vec<u8>>;
 }
 
 #[derive(Default)]
 pub(crate) struct DeflateCompressor;
 
 impl Compress for DeflateCompressor {
-    fn compress(&self, payload: &[u8]) -> Result<Vec<u8>> {
+    fn compress(&self, payload: &[u8]) -> CompressResult<Vec<u8>> {
         let mut encoder = DeflateEncoder::new(Vec::new(), Compression::default());
         encoder.write_all(payload)?;
         Ok(encoder.finish()?)
     }
 
-    fn decompress(&self, payload: &[u8]) -> Result<Vec<u8>> {
+    fn decompress(&self, payload: &[u8]) -> CompressResult<Vec<u8>> {
         let mut decoder = DeflateDecoder::new(payload);
         let mut buffer = Vec::new();
         decoder.read_to_end(&mut buffer)?;

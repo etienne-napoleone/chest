@@ -2,11 +2,11 @@ use std::fs;
 use std::io::{Read, Write};
 use std::path::Path;
 
-use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
 use crate::compression::{get_compressor, Compress};
 use crate::crypto::{get_encryptor, Encrypt};
+use crate::error::ChestResult;
 use crate::key::{get_deriver, Derive};
 
 #[derive(Serialize, Deserialize)]
@@ -74,13 +74,13 @@ pub(crate) struct LockedFile {
 }
 
 impl UnlockedChest {
-    pub(crate) fn new(password: &str, compress: bool) -> Result<Self> {
+    pub(crate) fn new(password: &str, compress: bool) -> ChestResult<Self> {
         let public = Public {
             compression_algorithm: compress.then_some(CompressionAlgorithm::default()),
             ..Public::default()
         };
         let deriver = get_deriver(&public.key_derivation_algorithm);
-        let key = deriver.derive(password, &public.key_derivation_salt)?;
+        let key = deriver.derive(password, &public.key_derivation_salt);
         let files = Vec::default();
         Ok(Self { key, public, files })
     }
@@ -89,7 +89,7 @@ impl UnlockedChest {
         &mut self,
         cipher: Vec<u8>,
         metadata: Metadata,
-    ) -> Result<()> {
+    ) -> ChestResult<()> {
         let encryptor = get_encryptor(&self.public.encryption_algorithm);
         let cipher = match &self.public.compression_algorithm {
             Some(compression_algorithm) => {
@@ -106,7 +106,7 @@ impl UnlockedChest {
         Ok(())
     }
 
-    pub(crate) fn add_file_from_path<P: AsRef<Path>>(&mut self, path: P) -> Result<()> {
+    pub(crate) fn add_file_from_path<P: AsRef<Path>>(&mut self, path: P) -> ChestResult<()> {
         let mut file = fs::File::open(&path)?;
         let metadata = fs::File::metadata(&file)?;
         let metadata = Metadata {
@@ -124,11 +124,11 @@ impl UnlockedChest {
         Ok(())
     }
 
-    pub(crate) fn lock(self, password: &str) -> Result<LockedChest> {
+    pub(crate) fn lock(self, password: &str) -> ChestResult<LockedChest> {
         let public = self.public;
         let deriver = get_deriver(&public.key_derivation_algorithm);
         let encryptor = get_encryptor(&public.encryption_algorithm);
-        let key = deriver.derive(password, &public.key_derivation_salt)?;
+        let key = deriver.derive(password, &public.key_derivation_salt);
         let files = self
             .files
             .into_iter()
@@ -145,7 +145,7 @@ impl UnlockedChest {
         Ok(LockedChest { public, files })
     }
 
-    pub(crate) fn decrypt_files_to_folder<P: AsRef<Path>>(&self, path: P) -> Result<()> {
+    pub(crate) fn decrypt_files_to_folder<P: AsRef<Path>>(&self, path: P) -> ChestResult<()> {
         fs::create_dir_all(&path)?;
         let encryptor = get_encryptor(&self.public.encryption_algorithm);
         let compressor = &self
@@ -170,25 +170,25 @@ impl UnlockedChest {
 }
 
 impl LockedChest {
-    pub(crate) fn from_file<P: AsRef<Path>>(path: P) -> Result<Self> {
+    pub(crate) fn from_file<P: AsRef<Path>>(path: P) -> ChestResult<Self> {
         let mut file = fs::File::open(path)?;
         let mut payload = Vec::new();
         file.read_to_end(&mut payload)?;
         Ok(bincode::deserialize(&payload)?)
     }
 
-    pub(crate) fn write_to_file<P: AsRef<Path>>(&self, path: P) -> Result<()> {
+    pub(crate) fn write_to_file<P: AsRef<Path>>(&self, path: P) -> ChestResult<()> {
         let serialized = bincode::serialize(self)?;
         let mut file = fs::File::create(path)?;
         file.write_all(&serialized)?;
         Ok(())
     }
 
-    pub(crate) fn unlock(self, password: &str) -> Result<UnlockedChest> {
+    pub(crate) fn unlock(self, password: &str) -> ChestResult<UnlockedChest> {
         let public = self.public;
         let deriver = get_deriver(&public.key_derivation_algorithm);
         let encryptor = get_encryptor(&public.encryption_algorithm);
-        let key = deriver.derive(password, &public.key_derivation_salt)?;
+        let key = deriver.derive(password, &public.key_derivation_salt);
         let files = self
             .files
             .into_iter()

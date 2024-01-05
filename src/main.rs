@@ -1,20 +1,26 @@
-use std::{
-    ffi::OsStr,
-    io::{self, Write},
-};
+use std::ffi::OsStr;
 
-use anyhow::Result;
 use chest::{LockedChest, UnlockedChest};
 use clap::Parser;
+use error::ChestResult;
+use term::{fatal, prompt};
 
 mod chest;
 mod cli;
 mod compression;
 mod crypto;
+mod error;
 mod key;
 mod random;
+mod term;
 
-fn main() -> Result<()> {
+fn main() {
+    if let Err(e) = run() {
+        fatal(&e.to_string(), 1);
+    }
+}
+
+fn run() -> ChestResult<()> {
     let cmd = cli::Cli::parse();
     match cmd.command {
         cli::Commands::New {
@@ -23,7 +29,7 @@ fn main() -> Result<()> {
             add,
             no_compression,
         } => {
-            let password = prompt_password_if_empty(password);
+            let password = password.unwrap_or_else(|| prompt("Password"));
             let mut unlocked = UnlockedChest::new(&password, !no_compression)?;
             add.iter()
                 .try_for_each(|path| unlocked.add_file_from_path(path))?;
@@ -31,7 +37,7 @@ fn main() -> Result<()> {
             locked.write_to_file(format!("{name}.chest"))?;
         }
         cli::Commands::Peek { chest, password } => {
-            let password = prompt_password_if_empty(password);
+            let password = password.unwrap_or_else(|| prompt("Password"));
             let locked = LockedChest::from_file(chest)?;
             let unlocked = locked.unlock(&password)?;
             unlocked
@@ -44,7 +50,7 @@ fn main() -> Result<()> {
             out,
             password,
         } => {
-            let password = prompt_password_if_empty(password);
+            let password = password.unwrap_or_else(|| prompt("Password"));
             let locked = LockedChest::from_file(&chest)?;
             let unlocked = locked.unlock(&password)?;
             let out = out.unwrap_or_else(|| {
@@ -58,16 +64,4 @@ fn main() -> Result<()> {
         }
     };
     Ok(())
-}
-
-fn prompt_password_if_empty(password: Option<String>) -> String {
-    password.unwrap_or_else(|| {
-        print!("> password: ");
-        _ = io::stdout().flush();
-        let mut input = String::new();
-        io::stdin()
-            .read_line(&mut input)
-            .expect("unable to read user input");
-        input.trim().to_string()
-    })
 }

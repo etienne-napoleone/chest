@@ -1,6 +1,5 @@
 use std::num::NonZeroU32;
 
-use anyhow::Result;
 use ring::pbkdf2;
 
 use crate::chest::KeyDerivationAlgorithm;
@@ -16,13 +15,13 @@ pub(crate) fn get_deriver(algorithm: &KeyDerivationAlgorithm) -> impl Derive {
 }
 
 pub(crate) trait Derive {
-    fn derive(&self, password: &str, salt: &[u8]) -> Result<Vec<u8>>;
+    fn derive(&self, password: &str, salt: &[u8]) -> Vec<u8>;
 }
 
 pub(crate) struct Pbkdf2HmacSha256Deriver;
 
 impl Derive for Pbkdf2HmacSha256Deriver {
-    fn derive(&self, password: &str, salt: &[u8]) -> Result<Vec<u8>> {
+    fn derive(&self, password: &str, salt: &[u8]) -> Vec<u8> {
         let mut key = [0u8; PBKDF2_LENGTH];
         pbkdf2::derive(
             PBKDF2_ALGORITHM,
@@ -31,6 +30,6 @@ impl Derive for Pbkdf2HmacSha256Deriver {
             password.as_bytes(),
             &mut key,
         );
-        Ok(key.to_vec())
+        key.to_vec()
     }
 }
