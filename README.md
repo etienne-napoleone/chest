@@ -58,3 +58,10 @@ Example:
 chest open top-secret.chest
 ```
 
+## Development
+
+Todo:
+
+- [ ] Process files in chunks
+- [ ] Process files in parallel (rayon?)
+- [ ] Better progress indicators
