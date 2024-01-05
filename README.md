@@ -1,11 +1,21 @@
 # 🗝️ `chest`
 
+Chest is a simple CLI program to encrypt and store files in a single binary blob (chest). For example, having a single file is handy when storing on public cloud platforms.
+
 > [!CAUTION]
 > This program is provided as is and has not been audited.
 > 
 > Use it to encrypt important files at your own risk.
 
-Chest is a simple CLI program to encrypt and store files in a single binary blob (chest). For example, having a single file is handy when storing on public cloud platforms.
+**Features:**
+
+- Simple CLI
+- Single storage file
+- File compression
+- File encryption
+- Compression algorithms: Deflate
+- Encryption algorithms: AES256
+- Modular conception, easy to add more algorithms
 
 ## Usage
 
