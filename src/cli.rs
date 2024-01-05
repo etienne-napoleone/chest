@@ -25,7 +25,7 @@ pub(crate) enum Commands {
         password: Option<String>,
     },
 
-    /// Peek into a chest and list its content
+    /// Peek into a chest and list its content, decrypting only metadata
     #[command(arg_required_else_help = true)]
     Peek {
         /// Chest file path

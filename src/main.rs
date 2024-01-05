@@ -1,7 +1,7 @@
 use std::io::{self, Write};
 
 use anyhow::Result;
-use chest::Chest;
+use chest::{LockedChest, UnlockedChest};
 use clap::Parser;
 
 mod chest;
@@ -20,17 +20,17 @@ fn main() -> Result<()> {
             add,
         } => {
             let password = prompt_password_if_empty(password);
-            let mut chest = Chest::new(&password)?;
+            let mut unlocked = UnlockedChest::new(&password)?;
             add.iter()
-                .try_for_each(|path| chest.add_file_from_path(path))?;
-            let locked = chest.lock(&password)?;
+                .try_for_each(|path| unlocked.add_file_from_path(path))?;
+            let locked = unlocked.lock(&password)?;
             locked.write_to_file(format!("{name}.chest"))?;
         }
         cli::Commands::Peek { chest, password } => {
             let password = prompt_password_if_empty(password);
-            let locked = Chest::from_file(chest)?;
-            let chest = locked.unlock(&password)?;
-            chest
+            let locked = LockedChest::from_file(chest)?;
+            let unlocked = locked.unlock(&password)?;
+            unlocked
                 .files
                 .iter()
                 .for_each(|f| println!("{}", f.metadata.filename));
