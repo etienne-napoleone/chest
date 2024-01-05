@@ -20,6 +20,9 @@ pub(crate) enum Commands {
         /// Files to encrypt in the chest
         #[arg(short, long, required = true, num_args(0..), value_name = "PATH")]
         add: Vec<PathBuf>,
+        /// Disable compression
+        #[clap(short, long, action)]
+        no_compression: bool,
         /// Optional chest password, will be prompted if not provided
         #[clap(short, long)]
         password: Option<String>,

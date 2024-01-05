@@ -21,9 +21,10 @@ fn main() -> Result<()> {
             name,
             password,
             add,
+            no_compression,
         } => {
             let password = prompt_password_if_empty(password);
-            let mut unlocked = UnlockedChest::new(&password)?;
+            let mut unlocked = UnlockedChest::new(&password, !no_compression)?;
             add.iter()
                 .try_for_each(|path| unlocked.add_file_from_path(path))?;
             let locked = unlocked.lock(&password)?;
