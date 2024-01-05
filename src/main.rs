@@ -79,7 +79,7 @@ fn run() -> ChestResult<()> {
                     .into()
             });
             info(&format!(
-                "Extracting chest to {}",
+                "Extracting chest to folder {}",
                 INFO.apply_to(format_path(&out))
             ));
             unlocked.decrypt_files_to_folder(&out)?;
