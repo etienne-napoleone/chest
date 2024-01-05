@@ -83,7 +83,7 @@ fn run() -> ChestResult<()> {
                 INFO.apply_to(format_path(&out))
             ));
             unlocked.decrypt_files_to_folder(&out)?;
-
+            remove_last_lines(1);
             success(&format!(
                 "Extracted chest to folder {}",
                 INFO.apply_to(format_path(&out))
